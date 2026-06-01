@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}GitHub Setup - Syntra{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Source control</p>
+    <h1>GitHub Setup</h1>
+  </div>
+</section>
+<section class="panel wide">
+  <h2>Status</h2>
+  {% if github.connected %}
+  <p>Connected as <strong>{{ github.login }}</strong>.</p>
+  {% else %}
+  <p>GitHub is not connected or the token cannot be verified.</p>
+  <code>{{ github.error }}</code>
+  {% endif %}
+  <h2>How to connect for this MVP</h2>
+  <p>Create a GitHub token with repository read/write and pull request permissions, then set it in your hosting environment as <code>GITHUB_TOKEN</code>.</p>
+  <p>For a production multi-user version, replace this with a GitHub App or OAuth flow that stores per-user installations.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Syntra{% endblock %}</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">Syntra</a>
+      <nav>
+        <a href="/app">Dashboard</a>
+        <a href="/app/projects">Projects</a>
+        <a href="/app/bugs">Bugs</a>
+        <a href="/app/github">GitHub</a>
+        <a href="/app/slack">Slack</a>
+      </nav>
+    </header>
+    <main>{% block content %}{% endblock %}</main>
+  </body>
+</html>

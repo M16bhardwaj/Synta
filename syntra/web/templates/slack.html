@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Slack Setup - Syntra{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">ChatOps</p>
+    <h1>Slack Setup</h1>
+  </div>
+</section>
+<section class="panel wide">
+  <h2>Request URL</h2>
+  <code>{{ slack_url }}</code>
+  <p>Use this URL for the <strong>/syntra-fix</strong> slash command and for Interactivity & Shortcuts.</p>
+  <h2>Required bot scopes</h2>
+  <ul>
+    <li><code>commands</code></li>
+    <li><code>chat:write</code></li>
+  </ul>
+</section>
+{% endblock %}

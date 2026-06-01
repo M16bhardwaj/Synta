@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Projects - Syntra{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Repositories</p>
+    <h1>Projects</h1>
+  </div>
+</section>
+<section class="split">
+  <form class="panel form" method="post" action="/app/projects">
+    <h2>Register Project</h2>
+    <label>Project name<input name="name" placeholder="crm-web" required></label>
+    <label>Repository URL<input name="repository_url" placeholder="https://github.com/org/repo" required></label>
+    <label>Default branch<input name="default_branch" value="main" required></label>
+    <button class="button primary" type="submit">Save Project</button>
+  </form>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Repository</th><th>Branch</th></tr></thead>
+      <tbody>
+        {% for project in projects %}
+        <tr>
+          <td>{{ project.name }}</td>
+          <td><a href="{{ project.repository_url }}">{{ project.repository_url }}</a></td>
+          <td>{{ project.default_branch }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3">No projects registered.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

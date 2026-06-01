@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Syntra Dashboard{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Operations</p>
+    <h1>Dashboard</h1>
+  </div>
+  <a class="button primary" href="/app/bugs/new">Submit Bug</a>
+</section>
+
+<section class="status-grid">
+  <div class="stat">
+    <span>Projects</span>
+    <strong>{{ projects|length }}</strong>
+  </div>
+  <div class="stat">
+    <span>Recent Bugs</span>
+    <strong>{{ bugs|length }}</strong>
+  </div>
+  <div class="stat">
+    <span>GitHub</span>
+    <strong>{% if github.connected %}Connected{% else %}Needs Setup{% endif %}</strong>
+  </div>
+  <div class="stat">
+    <span>LLM</span>
+    <strong>{{ llm_provider }}</strong>
+  </div>
+</section>
+
+<section class="split">
+  <div>
+    <div class="section-title">
+      <h2>Bug Queue</h2>
+      <a href="/app/bugs">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Title</th><th>Status</th><th>PR</th></tr></thead>
+        <tbody>
+          {% for bug in bugs %}
+          <tr>
+            <td>{{ bug.bug_id }}</td>
+            <td>{{ bug.title }}</td>
+            <td><span class="pill">{{ bug.status.value }}</span></td>
+            <td>{% if bug.pr_url %}<a href="{{ bug.pr_url }}">Open</a>{% else %}-{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4">No bugs submitted yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <aside class="panel">
+    <h2>Setup</h2>
+    <p>Slack endpoint:</p>
+    <code>{{ slack_url }}</code>
+    <p>GitHub account:</p>
+    <code>{% if github.connected %}{{ github.login }}{% else %}Not connected{% endif %}</code>
+    <div class="stack">
+      <a class="button" href="/app/github">GitHub Setup</a>
+      <a class="button" href="/app/slack">Slack Setup</a>
+    </div>
+  </aside>
+</section>
+{% endblock %}

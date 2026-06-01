@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Syntra - Autonomous Bug Fixes{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Slack to GitHub pull request</p>
+    <h1>Syntra</h1>
+    <p class="lede">An AI software engineering assistant that receives bug reports, understands a repository, creates a code fix, validates it, opens a pull request, and waits for human approval before merge.</p>
+    <div class="hero-actions">
+      <a class="button primary" href="/app">Open Dashboard</a>
+      <a class="button" href="/app/bugs/new">Submit Bug</a>
+    </div>
+  </div>
+  <div class="pipeline" aria-label="Workflow">
+    <span>Slack</span>
+    <span>Repository</span>
+    <span>Fix</span>
+    <span>Validation</span>
+    <span>Pull Request</span>
+    <span>Human Merge</span>
+  </div>
+</section>
+<section class="band">
+  <div class="grid three">
+    <article>
+      <h2>Human approval stays mandatory</h2>
+      <p>Syntra can prepare a fix and PR, but merge happens only after an explicit approval action.</p>
+    </article>
+    <article>
+      <h2>Built for proof, not bloat</h2>
+      <p>The app focuses on one workflow: bug report to GitHub PR. No dashboards you do not need, no infrastructure circus.</p>
+    </article>
+    <article>
+      <h2>Hostable today</h2>
+      <p>Run the FastAPI app, expose it with a domain, connect Slack, register repositories, and start testing.</p>
+    </article>
+  </div>
+</section>
+{% endblock %}

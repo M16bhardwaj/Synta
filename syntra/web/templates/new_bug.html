@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Submit Bug - Syntra{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Manual intake</p>
+    <h1>Submit Bug</h1>
+  </div>
+</section>
+<form class="panel form wide" method="post" action="/app/bugs">
+  <label>Project
+    <select name="project_name" required>
+      {% for project in projects %}
+      <option value="{{ project.name }}">{{ project.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Title<input name="title" placeholder="Login button broken" required></label>
+  <label>Description<textarea name="description" rows="6" placeholder="Clicking login does nothing..." required></textarea></label>
+  <label>Priority
+    <select name="priority">
+      <option>medium</option>
+      <option>low</option>
+      <option>high</option>
+    </select>
+  </label>
+  <button class="button primary" type="submit">Start Fix</button>
+</form>
+{% endblock %}
