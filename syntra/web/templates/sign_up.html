@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Create Workspace - Syntra{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <div class="auth-copy">
+    <p class="eyebrow">Create your workspace</p>
+    <h1>Bring Syntra into your engineering loop.</h1>
+    <p>Connect repositories, wire Slack, and let your team submit bug reports that turn into reviewed pull requests.</p>
+  </div>
+  <form class="panel form auth-card" method="post" action="/auth/sign-up">
+    <h2>Sign up</h2>
+    {% if error == "existing_user" %}
+    <p class="error-message">An account with this email already exists. Sign in instead.</p>
+    {% endif %}
+    <label>Name<input name="name" required></label>
+    <label>Email<input type="email" name="email" required></label>
+    <label>Password<input type="password" name="password" required minlength="8"></label>
+    <label>Workspace name<input name="workspace_name" placeholder="Acme Engineering" required></label>
+    <button class="button primary" type="submit">Create Workspace</button>
+    <p class="form-note">Already have an account? <a href="/auth/sign-in">Sign in</a>.</p>
+  </form>
+</section>
+{% endblock %}

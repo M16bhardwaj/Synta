@@ -11,10 +11,29 @@
   <h2>Request URL</h2>
   <code>{{ slack_url }}</code>
   <p>Use this URL for the <strong>/syntra-fix</strong> slash command and for Interactivity & Shortcuts.</p>
+  <div class="hero-actions">
+    <a class="button primary" href="/integrations/slack/install">Add to Slack</a>
+    {% if slack_install_url %}<a class="button" href="{{ slack_install_url }}">Open OAuth URL</a>{% endif %}
+  </div>
   <h2>Required bot scopes</h2>
   <ul>
     <li><code>commands</code></li>
     <li><code>chat:write</code></li>
   </ul>
+  <h2>Slack Installation Record</h2>
+  <form class="form" method="post" action="/app/slack/installations">
+    <label>Team ID<input name="team_id" placeholder="T012345"></label>
+    <label>Team name<input name="team_name" placeholder="Acme"></label>
+    <label>Bot user ID<input name="bot_user_id" placeholder="U012345"></label>
+    <button class="button primary" type="submit">Save Slack Workspace</button>
+  </form>
+  <h2>Saved Slack workspaces</h2>
+  <div class="job-list">
+    {% for item in installations %}
+    <div class="job-row"><span>{{ item.team_name or item.team_id or "Unknown team" }}</span><strong>{{ item.status }}</strong></div>
+    {% else %}
+    <p>No Slack installations saved yet.</p>
+    {% endfor %}
+  </div>
 </section>
 {% endblock %}

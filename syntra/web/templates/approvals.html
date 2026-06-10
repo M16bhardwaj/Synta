@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Approvals - Syntra{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Human gate</p>
+    <h1>Approval Center</h1>
+  </div>
+</section>
+<section class="approval-grid">
+  {% for bug in bugs %}
+  <article class="approval-card">
+    <div class="approval-top">
+      <span class="pill">{{ bug.bug_id }}</span>
+      <span>{{ bug.validation_result.value if bug.validation_result else "UNKNOWN" }}</span>
+    </div>
+    <h2>{{ bug.title }}</h2>
+    <p>{{ bug.description }}</p>
+    <dl>
+      <dt>Branch</dt><dd>{{ bug.branch_name or "-" }}</dd>
+      <dt>Pull Request</dt><dd>{% if bug.pr_url %}<a href="{{ bug.pr_url }}">Open PR</a>{% else %}-{% endif %}</dd>
+    </dl>
+    <div class="hero-actions">
+      <form method="post" action="/app/approvals/{{ bug.bug_id }}/approve">
+        <button class="button primary" type="submit">Approve Merge</button>
+      </form>
+      <form method="post" action="/app/approvals/{{ bug.bug_id }}/reject">
+        <button class="button danger" type="submit">Reject</button>
+      </form>
+    </div>
+  </article>
+  {% else %}
+  <div class="panel wide">
+    <h2>No PRs waiting for approval</h2>
+    <p>When Syntra opens a pull request, it will appear here and in Slack.</p>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

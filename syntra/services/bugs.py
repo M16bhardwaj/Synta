@@ -11,6 +11,7 @@ class BugService:
     def create(self, project: Project, data: BugIntake) -> Bug:
         bug = Bug(
             project_id=project.id,
+            workspace_id=project.workspace_id,
             title=data.title,
             description=data.description,
             priority=data.priority,

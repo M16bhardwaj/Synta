@@ -22,11 +22,13 @@ from syntra.db.base import SessionLocal, create_db
 from syntra.services.bugs import BugService
 from syntra.services.git_service import GitService
 from syntra.services.github_service import GitHubService
+from syntra.services.jobs import JobService
 from syntra.services.llm import LLMService
 from syntra.services.projects import ProjectService
 from syntra.services.repository import RepositoryService
 from syntra.services.slack import SlackNotifier, create_slack_app
 from syntra.services.validation import ValidationEngine
+from syntra.services.job_runner import build_workflow, run_queued_job_once
 from syntra.web.routes import router as web_router
 
 settings = get_settings()
@@ -34,19 +36,6 @@ configure_logging(settings)
 logger = logging.getLogger(__name__)
 
 github_service = GitHubService(settings.github_token)
-
-
-def build_workflow(session):
-    git_service = GitService(settings.workspace_dir, settings.github_token)
-    return BugFixWorkflow(
-        session=session,
-        git_service=git_service,
-        repository_agent=RepositoryAgent(RepositoryService()),
-        planning_agent=PlanningAgent(),
-        implementation_agent=ImplementationAgent(LLMService(settings.llm_provider, settings.llm_api_key)),
-        validation_agent=ValidationAgent(ValidationEngine()),
-        pull_request_agent=PullRequestAgent(git_service, github_service),
-    )
 
 
 async def process_bug(bug_id: str, channel: str, slack_client) -> None:
@@ -82,12 +71,15 @@ def create_app() -> FastAPI:
     app.include_router(projects_router)
 
     def enqueue_bug(bug_id: str, channel: str) -> None:
-        worker = threading.Thread(
-            target=lambda: asyncio.run(process_bug(bug_id, channel, slack_app.client)),
-            name=f"syntra-{bug_id}",
-            daemon=True,
-        )
-        worker.start()
+        with SessionLocal() as session:
+            JobService(session).enqueue_bug(bug_id)
+        if channel != "web":
+            worker = threading.Thread(
+                target=lambda: asyncio.run(process_bug(bug_id, channel, slack_app.client)),
+                name=f"syntra-{bug_id}",
+                daemon=True,
+            )
+            worker.start()
 
     slack_app, slack_handler = create_slack_app(
         settings=settings,
@@ -104,6 +96,18 @@ def create_app() -> FastAPI:
             if form.get("command") == "/syntra-fix":
                 return handle_syntra_command(form, enqueue_bug)
         return await slack_handler.handle(request)
+
+    @app.get("/internal/jobs/run-once")
+    async def run_one_job(request: Request):
+        if settings.cron_secret:
+            authorization = request.headers.get("authorization", "")
+            provided = request.headers.get("x-cron-secret") or request.query_params.get("secret")
+            if authorization == f"Bearer {settings.cron_secret}":
+                provided = settings.cron_secret
+            if provided != settings.cron_secret:
+                return PlainTextResponse("Unauthorized", status_code=401)
+        with SessionLocal() as session:
+            return await run_queued_job_once(session)
 
     return app
 

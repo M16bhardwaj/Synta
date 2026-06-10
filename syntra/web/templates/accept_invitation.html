@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Accept Invitation - Syntra{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <div class="auth-copy">
+    <p class="eyebrow">Workspace invitation</p>
+    <h1>Join this Syntra workspace.</h1>
+    <p>Sign in first if needed, then accept the invitation.</p>
+  </div>
+  <form class="panel form auth-card" method="post" action="/invite/{{ token }}">
+    <h2>Accept invitation</h2>
+    {% if user %}
+    <p>Signed in as {{ user.email }}.</p>
+    <button class="button primary" type="submit">Join Workspace</button>
+    {% else %}
+    <a class="button primary" href="/auth/sign-in">Sign In</a>
+    {% endif %}
+  </form>
+</section>
+{% endblock %}

@@ -13,6 +13,18 @@ class Settings(BaseSettings):
     slack_app_token: str = Field(alias="SLACK_APP_TOKEN")
     llm_provider: str = Field(default="openai", alias="LLM_PROVIDER")
     llm_api_key: str = Field(alias="LLM_API_KEY")
+    github_app_id: str | None = Field(default=None, alias="GITHUB_APP_ID")
+    github_app_private_key_path: str | None = Field(
+        default=None, alias="GITHUB_APP_PRIVATE_KEY_PATH"
+    )
+    github_app_webhook_secret: str | None = Field(default=None, alias="GITHUB_APP_WEBHOOK_SECRET")
+    github_app_slug: str | None = Field(default=None, alias="GITHUB_APP_SLUG")
+    slack_client_id: str | None = Field(default=None, alias="SLACK_CLIENT_ID")
+    slack_client_secret: str | None = Field(default=None, alias="SLACK_CLIENT_SECRET")
+    encryption_key: str | None = Field(default=None, alias="ENCRYPTION_KEY")
+    stripe_secret_key: str | None = Field(default=None, alias="STRIPE_SECRET_KEY")
+    stripe_publishable_key: str | None = Field(default=None, alias="STRIPE_PUBLISHABLE_KEY")
+    cron_secret: str | None = Field(default=None, alias="CRON_SECRET")
     workspace_dir: Path = Field(default=Path("./workspace"), alias="WORKSPACE_DIR")
     app_base_url: str = Field(default="http://localhost:8000", alias="APP_BASE_URL")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")

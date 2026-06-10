@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Team - Syntra{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">{{ workspace.name }}</p>
+    <h1>Team</h1>
+  </div>
+</section>
+<section class="split">
+  <form class="panel form" method="post" action="/app/team/invitations">
+    <h2>Invite teammate</h2>
+    <label>Email<input type="email" name="email" required></label>
+    <label>Role
+      <select name="role">
+        <option value="MEMBER">Member</option>
+        <option value="OWNER">Owner</option>
+      </select>
+    </label>
+    <button class="button primary" type="submit">Create Invite</button>
+  </form>
+  <div class="panel">
+    <h2>Members</h2>
+    <div class="job-list">
+      {% for member in members %}
+      <div class="job-row"><span>{{ member.user.email }}</span><strong>{{ member.role.value }}</strong></div>
+      {% else %}
+      <p>No members yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<section class="panel lower">
+  <h2>Invitations</h2>
+  <div class="job-list">
+    {% for invitation in invitations %}
+    <div class="job-row">
+      <span>{{ invitation.email }} · {{ base_url }}/invite/{{ invitation.token }}</span>
+      <strong>{{ invitation.status.value }}</strong>
+    </div>
+    {% else %}
+    <p>No invitations created yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

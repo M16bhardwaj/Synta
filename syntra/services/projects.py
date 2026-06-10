@@ -9,16 +9,18 @@ class ProjectService:
     def __init__(self, session: Session):
         self.session = session
 
-    def register(self, data: ProjectCreate) -> Project:
-        existing = self.get_by_name(data.name)
+    def register(self, data: ProjectCreate, workspace_id: int | None = None) -> Project:
+        existing = self.get_by_name(data.name, workspace_id)
         if existing:
             existing.repository_url = str(data.repository_url)
             existing.default_branch = data.default_branch
+            existing.workspace_id = workspace_id or existing.workspace_id
             self.session.commit()
             self.session.refresh(existing)
             return existing
 
         project = Project(
+            workspace_id=workspace_id,
             name=data.name,
             repository_url=str(data.repository_url),
             default_branch=data.default_branch,
@@ -28,5 +30,10 @@ class ProjectService:
         self.session.refresh(project)
         return project
 
-    def get_by_name(self, name: str) -> Project | None:
-        return self.session.scalar(select(Project).where(Project.name == name))
+    def get_by_name(self, name: str, workspace_id: int | None = None) -> Project | None:
+        query = select(Project).where(Project.name == name)
+        if workspace_id is not None:
+            query = query.where(
+                (Project.workspace_id == workspace_id) | (Project.workspace_id.is_(None))
+            )
+        return self.session.scalar(query)

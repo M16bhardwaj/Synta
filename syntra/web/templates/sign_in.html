@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Sign In - Syntra{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <div class="auth-copy">
+    <p class="eyebrow">Welcome back</p>
+    <h1>Open the bug-fix control room.</h1>
+    <p>Track projects, queued fixes, pull requests, approvals, and integration health from one place.</p>
+  </div>
+  <form class="panel form auth-card" method="post" action="/auth/sign-in">
+    <h2>Sign in</h2>
+    <label>Email<input type="email" name="email" required></label>
+    <label>Password<input type="password" name="password" required></label>
+    <button class="button primary" type="submit">Sign In</button>
+    <p class="form-note"><a href="/auth/forgot-password">Forgot password?</a></p>
+    <p class="form-note">New to Syntra? <a href="/auth/sign-up">Create a workspace</a>.</p>
+  </form>
+</section>
+{% endblock %}

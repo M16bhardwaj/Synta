@@ -15,8 +15,29 @@
   <p>GitHub is not connected or the token cannot be verified.</p>
   <code>{{ github.error }}</code>
   {% endif %}
-  <h2>How to connect for this MVP</h2>
-  <p>Create a GitHub token with repository read/write and pull request permissions, then set it in your hosting environment as <code>GITHUB_TOKEN</code>.</p>
-  <p>For a production multi-user version, replace this with a GitHub App or OAuth flow that stores per-user installations.</p>
+  <div class="hero-actions">
+    <a class="button primary" href="/integrations/github/install">Install GitHub App</a>
+  </div>
+  <h2>GitHub App Installation Record</h2>
+  <p>For hosted teams, Syntra should be installed as a GitHub App. Store the installation here while the app registration is being finalized.</p>
+  <form class="form" method="post" action="/app/github/installations">
+    <label>Installation ID<input name="installation_id" placeholder="12345678"></label>
+    <label>Account login<input name="account_login" placeholder="company-org"></label>
+    <label>Account type
+      <select name="account_type">
+        <option>Organization</option>
+        <option>User</option>
+      </select>
+    </label>
+    <button class="button primary" type="submit">Save Installation</button>
+  </form>
+  <h2>Saved installations</h2>
+  <div class="job-list">
+    {% for item in installations %}
+    <div class="job-row"><span>{{ item.account_login or "Unknown account" }}</span><strong>{{ item.status }}</strong></div>
+    {% else %}
+    <p>No GitHub installations saved yet.</p>
+    {% endfor %}
+  </div>
 </section>
 {% endblock %}

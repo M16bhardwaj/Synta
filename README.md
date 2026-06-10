@@ -1,164 +1,210 @@
 # Syntra
 
-Syntra is an MVP autonomous software engineering assistant. A user reports a bug from Slack, Syntra looks up the registered GitHub repository, creates a branch, makes a minimal code fix, runs validation, opens a pull request, and waits for explicit Slack approval before merging.
+Syntra is an autonomous software engineering assistant for the bug-fix loop. A user reports a bug, Syntra finds the registered GitHub repository, creates a branch, makes a minimal fix, runs validation, opens a pull request, and waits for explicit human approval before merge.
 
-This is intentionally not a SaaS platform. There is no dashboard, tenant model, vector database, queue, Kubernetes deployment, telemetry stack, or autonomous feature-development loop.
-
-## MVP Scope
-
-Syntra proves one workflow:
-
-1. Register a project once.
-2. Submit a bug with `/syntra-fix` in Slack.
-3. Syntra clones the repo and creates a `bugfix/...` branch.
-4. Syntra analyzes the repo, plans a fix, and modifies code.
-5. Syntra runs available validations.
-6. Syntra opens a GitHub pull request.
-7. Syntra posts the PR to Slack with `Approve Merge` and `Reject` buttons.
-8. A human approves from Slack.
-9. Syntra merges the PR.
+The original MVP was Slack-only. The current build is a SaaS foundation with authentication, workspaces, GitHub/Slack installation flows, a web dashboard, a worker process, team invites, billing records, and approval UI.
 
 Human approval is mandatory. Syntra never merges automatically.
 
+## What Works Now
+
+- User sign-up and sign-in
+- Session cookies
+- Email verification token flow
+- Password reset token flow
+- Workspace creation
+- Team invitations
+- Project registration
+- Slack `/syntra-fix` intake
+- Web bug submission
+- Repository clone, branch, commit, push
+- PR creation and merge after approval
+- Web approval center
+- GitHub App installation redirect and callback wiring
+- Slack OAuth install and callback wiring
+- Encrypted installation token storage
+- Local billing plans and subscription records
+- PostgreSQL-backed job queue
+- Separate worker process
+- Mock LLM mode for testing without an OpenAI key
+
 ## Architecture
 
-- `syntra/main.py`: FastAPI app and workflow composition
-- `syntra/services/slack.py`: Slack slash command and approval actions
-- `syntra/db/models.py`: PostgreSQL tables for projects and bugs
+- `syntra/main.py`: FastAPI app and Slack event routing
+- `syntra/web/routes.py`: server-rendered web app and SaaS flows
+- `syntra/worker.py`: background job worker
+- `syntra/db/models.py`: users, workspaces, projects, bugs, jobs, installations, invitations, subscriptions, audit events
+- `syntra/services/auth.py`: signup, login, verification, password reset
+- `syntra/services/integrations.py`: GitHub App and Slack OAuth flows
+- `syntra/services/billing.py`: local plans and subscription records
 - `syntra/services/git_service.py`: clone, branch, commit, push
-- `syntra/services/github_service.py`: PR creation and merge
-- `syntra/services/repository.py`: repository marker detection and candidate file lookup
-- `syntra/services/validation.py`: validation command runner
-- `syntra/services/llm.py`: centralized LLM service
-- `syntra/agents/*`: six thin agents for intake, repository analysis, planning, implementation, validation, and PR creation
+- `syntra/services/github_service.py`: PR creation, merge, GitHub App installation token helper
+- `syntra/services/slack.py`: Slack command and approval actions
+- `syntra/services/llm.py`: centralized LLM service with `openai` and `mock` providers
+- `syntra/agents/*`: intake, repository, planning, implementation, validation, pull request agents
 
-## Environment Variables
+## Environment
 
 Copy `.env.example` to `.env` and fill in:
 
-```bash
+```env
 DATABASE_URL=postgresql+psycopg://syntra:syntra@postgres:5432/syntra
 GITHUB_TOKEN=...
 SLACK_BOT_TOKEN=...
 SLACK_SIGNING_SECRET=...
 SLACK_APP_TOKEN=...
-LLM_PROVIDER=openai
-LLM_API_KEY=...
+LLM_PROVIDER=mock
+LLM_API_KEY=not-needed-for-mock
+GITHUB_APP_ID=
+GITHUB_APP_PRIVATE_KEY_PATH=
+GITHUB_APP_WEBHOOK_SECRET=
+GITHUB_APP_SLUG=
+SLACK_CLIENT_ID=
+SLACK_CLIENT_SECRET=
+ENCRYPTION_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
 WORKSPACE_DIR=/workspace/repos
 APP_BASE_URL=http://localhost:8000
+LOG_LEVEL=INFO
 ```
 
-## Local Setup
+Generate `ENCRYPTION_KEY`:
 
-Install dependencies locally:
+```powershell
+uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
 
-```bash
+Use `LLM_PROVIDER=mock` while testing without an OpenAI key. Switch to `LLM_PROVIDER=openai` when you have a real key.
+
+## Local Run
+
+Install dependencies:
+
+```powershell
 uv sync --extra dev
 ```
 
-Run with Docker Compose:
+Apply schema migrations:
 
-```bash
-cp .env.example .env
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\migrate.ps1
+```
+
+Start the web app:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start.ps1
+```
+
+Start the worker in a second terminal:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start-worker.ps1
+```
+
+Open:
+
+```text
+http://localhost:8000
+```
+
+## Docker
+
+```powershell
 docker compose up --build
 ```
 
-The API runs on `http://localhost:8000`.
+Docker Compose starts:
 
-## Project Registration
+- `app`
+- `worker`
+- `postgres`
 
-Register a project once:
+## Vercel
 
-```bash
-curl -X POST http://localhost:8000/projects \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "crm-web",
-    "repository_url": "https://github.com/company/crm-web",
-    "default_branch": "main"
-  }'
-```
+See [VERCEL.md](VERCEL.md).
 
-Users reference only the project name in Slack:
+Vercel can host the web/API app. For demos, Vercel Cron can call `/internal/jobs/run-once` to process queued jobs. For production, run `syntra-worker` on a worker-friendly host such as Render, Railway, Fly.io, or ECS.
 
-```text
-project=crm-web
-```
+## Slack Setup
 
-## Slack App Setup
+Expose the app locally:
 
-Create a Slack app and enable:
-
-- Slash command: `/syntra-fix`
-- Request URL: `https://your-public-url/slack/events`
-- Interactivity request URL: `https://your-public-url/slack/events`
-- Bot token scopes: `commands`, `chat:write`
-
-For local development, expose FastAPI through a tunnel such as ngrok:
-
-```bash
+```powershell
 ngrok http 8000
 ```
 
-Install the app into your workspace and copy the bot token and signing secret into `.env`.
-
-## GitHub Token Setup
-
-Create a GitHub token with access to the target repositories. For private repositories, the token must be able to clone, push branches, create pull requests, and merge pull requests.
-
-## Submit A Bug
-
-In Slack:
+Set both Slack URLs to:
 
 ```text
-/syntra-fix
-project=crm-web
-title=Login button broken
-description=Clicking login does nothing
-priority=medium
+https://your-public-url/slack/events
 ```
 
-Syntra replies when work begins:
+Required bot scopes:
+
+- `commands`
+- `chat:write`
+
+Slack OAuth is wired at:
 
 ```text
-Syntra started working on BUG-123.
+/integrations/slack/install
+/integrations/slack/callback
 ```
 
-When a PR is ready, Syntra posts the bug ID, project, PR URL, validation status, summary, and buttons for `Approve Merge` or `Reject`.
+Configure `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET` to use the Add-to-Slack flow.
 
-## Approval
+## GitHub App
 
-Click `Approve Merge` to merge the associated PR. Syntra verifies the bug and PR record, calls GitHub to merge, updates the bug status, and posts a confirmation.
+GitHub App installation is wired at:
 
-Click `Reject` to mark the bug rejected. Syntra does not merge.
+```text
+/integrations/github/install
+/integrations/github/callback
+```
 
-## Validation
+Configure:
 
-Syntra runs available commands based on repository markers:
+```env
+GITHUB_APP_ID=
+GITHUB_APP_PRIVATE_KEY_PATH=
+GITHUB_APP_WEBHOOK_SECRET=
+GITHUB_APP_SLUG=
+```
 
-- Node: `npm test`, `npm run lint`, `npm run build`
-- Python: `pytest`
-- Java Maven: `mvn test`
-- Java Gradle: `gradle test`
-- Go: `go test ./...`
+The callback stores `installation_id`. `GitHubService.installation_token()` can mint installation tokens when app credentials are configured. The app can still use `GITHUB_TOKEN` for local demos.
 
-Validation status is:
+## Web Workflow
 
-- `PASSED`: all available validations succeeded
-- `PARTIAL`: some commands were unavailable or no known commands were found
-- `FAILED`: at least one available command failed
+1. Create a workspace.
+2. Verify email using the local development link shown in the dashboard.
+3. Register a project.
+4. Connect or record GitHub/Slack installations.
+5. Submit a bug from `/app/bugs/new`.
+6. Run the worker.
+7. Review status in `/app/bugs`.
+8. Approve PRs from `/app/approvals`.
+
+## Billing
+
+Billing is available at:
+
+```text
+/app/billing
+```
+
+Without Stripe keys, plans are local subscription records for development. With Stripe keys, replace the local plan switch with Stripe Checkout products/prices.
 
 ## Tests
 
-```bash
+```powershell
 uv run pytest
 ```
 
-## Current Limitations
+## Remaining Production Work
 
-- One FastAPI process handles requests and background work.
-- No durable job queue; failed process restarts do not resume active work.
-- Repository understanding is marker and keyword based.
-- Implementation depends on the centralized LLM service returning full replacement file contents.
-- Slack uses HTTP request URLs; `SLACK_APP_TOKEN` is reserved for future Socket Mode support.
-- Database migrations are not included; tables are created at startup for MVP speed.
+- Add SMTP or a transactional email provider for real verification/reset delivery.
+- Replace local billing plan switches with Stripe Checkout and webhooks.
+- Use GitHub App installation tokens throughout clone/push/PR paths per workspace.
+- Add Alembic revisioned migrations if you want production-grade schema history.

@@ -3,11 +3,27 @@
 {% block content %}
 <section class="page-head">
   <div>
-    <p class="eyebrow">Operations</p>
-    <h1>Dashboard</h1>
+    <p class="eyebrow">{{ workspace.name }}</p>
+    <h1>Engineering Autopilot</h1>
   </div>
   <a class="button primary" href="/app/bugs/new">Submit Bug</a>
 </section>
+
+<section class="command-strip">
+  <div>
+    <span>Slack command</span>
+    <strong>/syntra-fix project=&lt;name&gt; title=&lt;bug&gt; description=&lt;details&gt;</strong>
+  </div>
+  <a class="button" href="/app/slack">Configure Slack</a>
+</section>
+
+{% if verification_link and not user.email_verified %}
+<section class="panel verify-banner">
+  <h2>Verify your email</h2>
+  <p>Email delivery is not configured locally, so use this development verification link:</p>
+  <code>{{ verification_link }}</code>
+</section>
+{% endif %}
 
 <section class="status-grid">
   <div class="stat">
@@ -53,7 +69,7 @@
     </div>
   </div>
   <aside class="panel">
-    <h2>Setup</h2>
+    <h2>Integration Health</h2>
     <p>Slack endpoint:</p>
     <code>{{ slack_url }}</code>
     <p>GitHub account:</p>
@@ -63,5 +79,38 @@
       <a class="button" href="/app/slack">Slack Setup</a>
     </div>
   </aside>
+</section>
+
+<section class="split lower">
+  <div class="panel">
+    <div class="section-title">
+      <h2>Worker Jobs</h2>
+    </div>
+    <div class="job-list">
+      {% for job in jobs %}
+      <div class="job-row">
+        <span>#{{ job.id }} {{ job.bug_id }}</span>
+        <strong>{{ job.status.value }}</strong>
+      </div>
+      {% else %}
+      <p>No queued jobs.</p>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="panel">
+    <div class="section-title">
+      <h2>Audit Trail</h2>
+    </div>
+    <div class="job-list">
+      {% for event in audits %}
+      <div class="job-row">
+        <span>{{ event.action }}</span>
+        <strong>{{ event.subject }}</strong>
+      </div>
+      {% else %}
+      <p>No audit events yet.</p>
+      {% endfor %}
+    </div>
+  </div>
 </section>
 {% endblock %}
