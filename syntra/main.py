@@ -63,7 +63,8 @@ async def process_bug(bug_id: str, channel: str, slack_client) -> None:
 
 
 def create_app() -> FastAPI:
-    create_db()
+    if settings.auto_create_db:
+        create_db()
     app = FastAPI(title="Syntra MVP")
     app.mount("/static", StaticFiles(directory="syntra/web/static"), name="static")
     app.include_router(web_router)
