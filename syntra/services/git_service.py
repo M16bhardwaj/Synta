@@ -1,8 +1,7 @@
 import re
 import shutil
 from pathlib import Path
-
-from git import Repo
+from typing import Any
 
 from syntra.db.models import Bug, Project
 
@@ -17,7 +16,8 @@ class GitService:
         self.workspace_dir = workspace_dir
         self.github_token = github_token
 
-    def clone_for_bug(self, project: Project, bug: Bug) -> tuple[Repo, Path, str]:
+    def clone_for_bug(self, project: Project, bug: Bug) -> tuple[Any, Path, str]:
+        Repo = self._repo_class()
         repo_dir = self.workspace_dir / bug.bug_id
         if repo_dir.exists():
             shutil.rmtree(repo_dir)
@@ -32,15 +32,26 @@ class GitService:
         repo.git.checkout("-b", branch_name)
         return repo, repo_dir, branch_name
 
-    def commit_all(self, repo: Repo, title: str) -> bool:
+    def commit_all(self, repo: Any, title: str) -> bool:
         repo.git.add(A=True)
         if not repo.is_dirty(untracked_files=True):
             return False
         repo.index.commit(f"fix: resolve {title}")
         return True
 
-    def push(self, repo: Repo, branch_name: str) -> None:
+    def push(self, repo: Any, branch_name: str) -> None:
         repo.remotes.origin.push(refspec=f"{branch_name}:{branch_name}", set_upstream=True)
+
+    def _repo_class(self):
+        try:
+            from git import Repo
+        except ImportError as exc:
+            raise RuntimeError(
+                "Git operations are unavailable because the runtime does not provide a git "
+                "executable. Deploy the worker on Render, Railway, Fly.io, or another host with "
+                "git installed; keep Vercel for the web app and Slack/GitHub callbacks."
+            ) from exc
+        return Repo
 
     def _authenticated_url(self, repository_url: str) -> str:
         if not self.github_token or "github.com" not in repository_url:

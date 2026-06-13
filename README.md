@@ -122,7 +122,7 @@ Docker Compose starts:
 
 See [VERCEL.md](VERCEL.md).
 
-Vercel can host the web/API app. For demos, Vercel Cron can call `/internal/jobs/run-once` to process queued jobs. For production, run `syntra-worker` on a worker-friendly host such as Render, Railway, Fly.io, or ECS.
+Vercel can host the web/API app. The actual bug-fix worker needs a runtime with the `git` executable installed, so run `syntra-worker` on a worker-friendly host such as Render, Railway, Fly.io, or ECS.
 
 ## Slack Setup
 

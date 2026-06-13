@@ -1,23 +1,24 @@
 # Deploy Syntra on Vercel
 
-Syntra can be deployed to Vercel as a FastAPI application. Vercel’s current FastAPI runtime supports exporting an `app` instance through `pyproject.toml`, and this repo defines:
+Syntra can be deployed to Vercel as a FastAPI application. The repo exposes the app through root `app.py`:
 
-```toml
-[project.scripts]
-app = "syntra.main:app"
+```python
+from syntra.main import app
 ```
 
 ## Important Architecture Note
 
 Vercel is serverless. It is good for the web app, Slack endpoints, GitHub callbacks, and lightweight API requests.
 
-Syntra’s heavy workflow does repository cloning, code modification, validation, Git push, and PR creation. On Vercel this runs through a cron-triggered serverless endpoint:
+Syntra's heavy workflow does repository cloning, code modification, validation, Git push, and PR creation. Vercel's Python runtime does not provide the `git` executable that GitPython needs, so the worker should run on a host with git installed.
+
+The cron endpoint remains available for worker-style hosts or future queue triggers:
 
 ```text
 /internal/jobs/run-once
 ```
 
-This is fine for demos and small jobs, especially with `LLM_PROVIDER=mock`. For production, run the worker on Render, Railway, Fly.io, ECS, or another runtime that supports long-lived background processes.
+For real bug-fix jobs, run `syntra-worker` on Render, Railway, Fly.io, ECS, or another runtime that supports long-lived background processes and has git installed.
 
 ## Required Hosted Services
 
@@ -92,7 +93,7 @@ $env:DATABASE_URL="your-hosted-database-url"
 uv run python -m syntra.db.migrate
 ```
 
-Or use Vercel’s project shell/logged command support if available for your account.
+Or use Vercel's project shell/logged command support if available for your account.
 
 ## Configure Slack
 

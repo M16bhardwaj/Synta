@@ -74,6 +74,7 @@ def create_app() -> FastAPI:
     app.include_router(projects_router)
 
     @app.get("/favicon.ico", include_in_schema=False)
+    @app.get("/favicon.png", include_in_schema=False)
     def favicon():
         svg = (
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'

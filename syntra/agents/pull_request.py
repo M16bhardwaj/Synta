@@ -1,4 +1,4 @@
-from git import Repo
+from typing import Any
 
 from syntra.agents.base import SyntraAgent
 from syntra.db.models import Bug, Project, ValidationStatus
@@ -16,7 +16,7 @@ class PullRequestAgent(SyntraAgent):
 
     def create(
         self,
-        repo: Repo,
+        repo: Any,
         project: Project,
         bug: Bug,
         branch_name: str,
