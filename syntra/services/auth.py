@@ -26,7 +26,8 @@ class AuthService:
     def __init__(self, session: Session):
         self.session = session
         settings = get_settings()
-        self.serializer = URLSafeSerializer(settings.llm_api_key + settings.github_token)
+        secret = settings.encryption_key or settings.llm_api_key or settings.github_token
+        self.serializer = URLSafeSerializer(secret or "syntra-local-development-secret")
 
     def create_user(self, email: str, name: str, password: str, workspace_name: str) -> User:
         existing = self.session.scalar(select(User).where(User.email == email.lower()))

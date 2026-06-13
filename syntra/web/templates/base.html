@@ -8,18 +8,20 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/">Syntra</a>
-      <nav>
+      <a class="brand" href="/">
+        <span class="brand-mark">S</span>
+        <span>Syntra</span>
+      </a>
+      <nav class="nav-links">
         {% if user %}
           <a href="/app">Dashboard</a>
           <a href="/app/projects">Projects</a>
           <a href="/app/bugs">Bugs</a>
           <a href="/app/approvals">Approvals</a>
           <a href="/app/team">Team</a>
-          <a href="/app/billing">Billing</a>
           <a href="/app/github">GitHub</a>
           <a href="/app/slack">Slack</a>
-          <form method="post" action="/auth/logout" class="nav-form"><button type="submit">Sign out</button></form>
+          <form method="post" action="/auth/logout" class="nav-form"><button type="submit" aria-label="Sign out">Sign out</button></form>
         {% else %}
           <a href="/auth/sign-in">Sign in</a>
           <a class="nav-cta" href="/auth/sign-up">Create workspace</a>

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from github import Github
+from pathlib import Path
 from sqlalchemy import desc, select
 
 from syntra.core.config import get_settings
@@ -21,7 +22,6 @@ from syntra.schemas.bugs import BugIntake
 from syntra.schemas.projects import ProjectCreate
 from syntra.services.bugs import BugService
 from syntra.services.auth import AuthService
-from syntra.services.billing import BillingService, PLANS
 from syntra.services.github_service import GitHubService
 from syntra.services.integrations import IntegrationService
 from syntra.services.invitations import InvitationService
@@ -29,7 +29,8 @@ from syntra.services.jobs import JobService
 from syntra.services.projects import ProjectService
 
 settings = get_settings()
-templates = Jinja2Templates(directory="syntra/web/templates")
+WEB_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 router = APIRouter()
 
 
@@ -578,35 +579,3 @@ def accept_invitation(request: Request, token: str):
         session_user = auth.current_user(request)
         InvitationService(session).accept(token, session_user)
     return RedirectResponse("/app", status_code=303)
-
-
-@router.get("/app/billing", response_class=HTMLResponse)
-def billing_page(request: Request):
-    user, workspace = _require_workspace(request)
-    if not user or not workspace:
-        return RedirectResponse("/auth/sign-in", status_code=303)
-    with SessionLocal() as session:
-        subscription = BillingService(session).subscription_for(workspace.id)
-    return templates.TemplateResponse(
-        request,
-        "billing.html",
-        {
-            "request": request,
-            "plans": PLANS,
-            "subscription": subscription,
-            "stripe_enabled": bool(settings.stripe_secret_key),
-            "user": user,
-            "workspace": workspace,
-        },
-    )
-
-
-@router.post("/app/billing/plan")
-def change_plan(request: Request, plan: str = Form(...)):
-    user, workspace = _require_workspace(request)
-    if not user or not workspace:
-        return RedirectResponse("/auth/sign-in", status_code=303)
-    with SessionLocal() as session:
-        workspace_ref = session.get(Workspace, workspace.id)
-        BillingService(session).change_plan(workspace_ref, plan)
-    return RedirectResponse("/app/billing", status_code=303)

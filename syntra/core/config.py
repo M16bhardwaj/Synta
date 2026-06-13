@@ -8,12 +8,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str = Field(alias="DATABASE_URL")
-    github_token: str = Field(alias="GITHUB_TOKEN")
-    slack_bot_token: str = Field(alias="SLACK_BOT_TOKEN")
-    slack_signing_secret: str = Field(alias="SLACK_SIGNING_SECRET")
-    slack_app_token: str = Field(alias="SLACK_APP_TOKEN")
+    github_token: str = Field(default="", alias="GITHUB_TOKEN")
+    slack_bot_token: str = Field(default="", alias="SLACK_BOT_TOKEN")
+    slack_signing_secret: str = Field(default="", alias="SLACK_SIGNING_SECRET")
+    slack_app_token: str = Field(default="", alias="SLACK_APP_TOKEN")
     llm_provider: str = Field(default="openai", alias="LLM_PROVIDER")
-    llm_api_key: str = Field(alias="LLM_API_KEY")
+    llm_api_key: str = Field(default="", alias="LLM_API_KEY")
     github_app_id: str | None = Field(default=None, alias="GITHUB_APP_ID")
     github_app_private_key_path: str | None = Field(
         default=None, alias="GITHUB_APP_PRIVATE_KEY_PATH"

@@ -57,8 +57,6 @@ GITHUB_APP_SLUG=
 SLACK_CLIENT_ID=
 SLACK_CLIENT_SECRET=
 ENCRYPTION_KEY=
-STRIPE_SECRET_KEY=
-STRIPE_PUBLISHABLE_KEY=
 CRON_SECRET=
 AUTO_CREATE_DB=false
 WORKSPACE_DIR=/tmp/syntra-repos
@@ -132,7 +130,7 @@ https://your-vercel-domain.vercel.app/integrations/slack/callback
 ```json
 {
   "path": "/internal/jobs/run-once",
-  "schedule": "*/5 * * * *"
+  "schedule": "0 0 * * *"
 }
 ```
 

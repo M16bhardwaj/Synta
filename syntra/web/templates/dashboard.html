@@ -4,7 +4,7 @@
 <section class="page-head">
   <div>
     <p class="eyebrow">{{ workspace.name }}</p>
-    <h1>Engineering Autopilot</h1>
+    <h1>Command Center</h1>
   </div>
   <a class="button primary" href="/app/bugs/new">Submit Bug</a>
 </section>
@@ -29,18 +29,22 @@
   <div class="stat">
     <span>Projects</span>
     <strong>{{ projects|length }}</strong>
+    <small>registered repositories</small>
   </div>
   <div class="stat">
     <span>Recent Bugs</span>
     <strong>{{ bugs|length }}</strong>
+    <small>latest workspace reports</small>
   </div>
   <div class="stat">
     <span>GitHub</span>
     <strong>{% if github.connected %}Connected{% else %}Needs Setup{% endif %}</strong>
+    <small>{% if github.connected %}{{ github.login }}{% else %}token or app required{% endif %}</small>
   </div>
   <div class="stat">
     <span>LLM</span>
     <strong>{{ llm_provider }}</strong>
+    <small>reasoning provider</small>
   </div>
 </section>
 
@@ -69,6 +73,7 @@
     </div>
   </div>
   <aside class="panel">
+    <span class="card-kicker">Live wiring</span>
     <h2>Integration Health</h2>
     <p>Slack endpoint:</p>
     <code>{{ slack_url }}</code>

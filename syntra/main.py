@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import threading
+from pathlib import Path
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -36,6 +37,7 @@ configure_logging(settings)
 logger = logging.getLogger(__name__)
 
 github_service = GitHubService(settings.github_token)
+WEB_DIR = Path(__file__).resolve().parent / "web"
 
 
 async def process_bug(bug_id: str, channel: str, slack_client) -> None:
@@ -66,7 +68,7 @@ def create_app() -> FastAPI:
     if settings.auto_create_db:
         create_db()
     app = FastAPI(title="Syntra MVP")
-    app.mount("/static", StaticFiles(directory="syntra/web/static"), name="static")
+    app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
     app.include_router(web_router)
     app.include_router(health_router)
     app.include_router(projects_router)
@@ -74,7 +76,7 @@ def create_app() -> FastAPI:
     def enqueue_bug(bug_id: str, channel: str) -> None:
         with SessionLocal() as session:
             JobService(session).enqueue_bug(bug_id)
-        if channel != "web":
+        if channel != "web" and slack_app:
             worker = threading.Thread(
                 target=lambda: asyncio.run(process_bug(bug_id, channel, slack_app.client)),
                 name=f"syntra-{bug_id}",
@@ -82,15 +84,20 @@ def create_app() -> FastAPI:
             )
             worker.start()
 
-    slack_app, slack_handler = create_slack_app(
-        settings=settings,
-        enqueue_bug=enqueue_bug,
-        session_factory=SessionLocal,
-        github_service=github_service,
-    )
+    slack_app = None
+    slack_handler = None
+    if settings.slack_bot_token and settings.slack_signing_secret:
+        slack_app, slack_handler = create_slack_app(
+            settings=settings,
+            enqueue_bug=enqueue_bug,
+            session_factory=SessionLocal,
+            github_service=github_service,
+        )
 
     @app.post("/slack/events")
     async def slack_events(request: Request, tasks: BackgroundTasks):
+        if not slack_handler:
+            return PlainTextResponse("Slack is not configured.", status_code=503)
         content_type = request.headers.get("content-type", "")
         if "application/x-www-form-urlencoded" in content_type:
             form = await request.form()

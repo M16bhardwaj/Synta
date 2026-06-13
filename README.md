@@ -2,7 +2,7 @@
 
 Syntra is an autonomous software engineering assistant for the bug-fix loop. A user reports a bug, Syntra finds the registered GitHub repository, creates a branch, makes a minimal fix, runs validation, opens a pull request, and waits for explicit human approval before merge.
 
-The original MVP was Slack-only. The current build is a SaaS foundation with authentication, workspaces, GitHub/Slack installation flows, a web dashboard, a worker process, team invites, billing records, and approval UI.
+The original MVP was Slack-only. The current build is a focused product foundation with authentication, workspaces, GitHub/Slack installation flows, a web dashboard, a worker process, team invites, and approval UI.
 
 Human approval is mandatory. Syntra never merges automatically.
 
@@ -23,7 +23,6 @@ Human approval is mandatory. Syntra never merges automatically.
 - GitHub App installation redirect and callback wiring
 - Slack OAuth install and callback wiring
 - Encrypted installation token storage
-- Local billing plans and subscription records
 - PostgreSQL-backed job queue
 - Separate worker process
 - Mock LLM mode for testing without an OpenAI key
@@ -33,10 +32,9 @@ Human approval is mandatory. Syntra never merges automatically.
 - `syntra/main.py`: FastAPI app and Slack event routing
 - `syntra/web/routes.py`: server-rendered web app and SaaS flows
 - `syntra/worker.py`: background job worker
-- `syntra/db/models.py`: users, workspaces, projects, bugs, jobs, installations, invitations, subscriptions, audit events
+- `syntra/db/models.py`: users, workspaces, projects, bugs, jobs, installations, invitations, audit events
 - `syntra/services/auth.py`: signup, login, verification, password reset
 - `syntra/services/integrations.py`: GitHub App and Slack OAuth flows
-- `syntra/services/billing.py`: local plans and subscription records
 - `syntra/services/git_service.py`: clone, branch, commit, push
 - `syntra/services/github_service.py`: PR creation, merge, GitHub App installation token helper
 - `syntra/services/slack.py`: Slack command and approval actions
@@ -62,8 +60,6 @@ GITHUB_APP_SLUG=
 SLACK_CLIENT_ID=
 SLACK_CLIENT_SECRET=
 ENCRYPTION_KEY=
-STRIPE_SECRET_KEY=
-STRIPE_PUBLISHABLE_KEY=
 AUTO_CREATE_DB=true
 WORKSPACE_DIR=/workspace/repos
 APP_BASE_URL=http://localhost:8000
@@ -187,16 +183,6 @@ The callback stores `installation_id`. `GitHubService.installation_token()` can 
 7. Review status in `/app/bugs`.
 8. Approve PRs from `/app/approvals`.
 
-## Billing
-
-Billing is available at:
-
-```text
-/app/billing
-```
-
-Without Stripe keys, plans are local subscription records for development. With Stripe keys, replace the local plan switch with Stripe Checkout products/prices.
-
 ## Tests
 
 ```powershell
@@ -206,6 +192,5 @@ uv run pytest
 ## Remaining Production Work
 
 - Add SMTP or a transactional email provider for real verification/reset delivery.
-- Replace local billing plan switches with Stripe Checkout and webhooks.
 - Use GitHub App installation tokens throughout clone/push/PR paths per workspace.
 - Add Alembic revisioned migrations if you want production-grade schema history.
