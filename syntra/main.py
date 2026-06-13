@@ -6,7 +6,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from starlette.responses import PlainTextResponse
+from starlette.responses import PlainTextResponse, Response
 
 from syntra.agents.intake import IntakeAgent
 from syntra.agents.implementation import ImplementationAgent
@@ -72,6 +72,17 @@ def create_app() -> FastAPI:
     app.include_router(web_router)
     app.include_router(health_router)
     app.include_router(projects_router)
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon():
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+            '<rect width="64" height="64" rx="14" fill="#151712"/>'
+            '<path d="M18 42c4 4 9 6 15 6 8 0 14-4 14-10 0-7-6-9-14-11-6-1-9-2-9-5 0-3 3-5 8-5 4 0 8 1 12 4l3-8c-4-3-9-5-15-5-9 0-16 5-16 12 0 8 7 10 15 12 5 1 8 2 8 5 0 2-2 4-7 4-5 0-9-2-13-6l-1 7Z" fill="#f6f4ef"/>'
+            '<path d="M18 42c4 4 9 6 15 6 8 0 14-4 14-10" fill="none" stroke="#6dd3a8" stroke-width="3" stroke-linecap="round"/>'
+            "</svg>"
+        )
+        return Response(content=svg, media_type="image/svg+xml")
 
     def enqueue_bug(bug_id: str, channel: str) -> None:
         with SessionLocal() as session:
