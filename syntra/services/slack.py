@@ -3,11 +3,12 @@ import logging
 from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
 from slack_sdk import WebClient
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from syntra.agents.intake import IntakeAgent
 from syntra.core.config import Settings
-from syntra.db.models import BugStatus
+from syntra.db.models import BugStatus, SlackInstallation
 from syntra.services.bugs import BugService
 from syntra.services.github_service import GitHubService
 from syntra.services.projects import ProjectService
@@ -97,6 +98,15 @@ def create_slack_app(
     )
     intake = IntakeAgent()
 
+    def workspace_id_for_body(session: Session, body: dict) -> int | None:
+        team_id = body.get("team_id") or body.get("team", {}).get("id")
+        if not team_id:
+            return None
+        installation = session.scalar(
+            select(SlackInstallation).where(SlackInstallation.team_id == team_id)
+        )
+        return installation.workspace_id if installation else None
+
     @app.command("/syntra-fix")
     def syntra_fix(ack, body, client, respond):
         ack()
@@ -104,7 +114,11 @@ def create_slack_app(
         try:
             bug_data = intake.parse(body.get("text", ""))
             with session_factory() as session:
-                project = ProjectService(session).get_by_name(bug_data.project)
+                workspace_id = workspace_id_for_body(session, body)
+                if not workspace_id:
+                    respond("This Slack workspace is not connected to a Syntra workspace yet.")
+                    return
+                project = ProjectService(session).get_by_name(bug_data.project, workspace_id)
                 if not project:
                     respond(f"Unknown project `{bug_data.project}`. Register it before filing bugs.")
                     return
@@ -123,8 +137,12 @@ def create_slack_app(
         channel = body["channel"]["id"]
         notifier = SlackNotifier(client)
         with session_factory() as session:
+            workspace_id = workspace_id_for_body(session, body)
+            if not workspace_id:
+                notifier.failed(channel, bug_id, "This Slack workspace is not connected to Syntra.")
+                return
             bugs = BugService(session)
-            bug = bugs.get(bug_id)
+            bug = bugs.get_for_workspace(bug_id, workspace_id)
             if not bug or not bug.pr_number or not bug.pr_url:
                 notifier.failed(channel, bug_id, "Associated PR was not found.")
                 return
@@ -149,7 +167,8 @@ def create_slack_app(
         bug_id = body["actions"][0]["value"]
         channel = body["channel"]["id"]
         with session_factory() as session:
-            bug = BugService(session).get(bug_id)
+            workspace_id = workspace_id_for_body(session, body)
+            bug = BugService(session).get_for_workspace(bug_id, workspace_id) if workspace_id else None
             if bug:
                 BugService(session).mark_rejected(bug)
         SlackNotifier(client).rejected(channel, bug_id)

@@ -39,7 +39,7 @@
   <div class="stat">
     <span>GitHub</span>
     <strong>{% if github.connected %}Connected{% else %}Needs Setup{% endif %}</strong>
-    <small>{% if github.connected %}{{ github.login }}{% else %}token or app required{% endif %}</small>
+    <small>{{ github.label }}</small>
   </div>
   <div class="stat">
     <span>LLM</span>
@@ -78,7 +78,7 @@
     <p>Slack endpoint:</p>
     <code>{{ slack_url }}</code>
     <p>GitHub account:</p>
-    <code>{% if github.connected %}{{ github.login }}{% else %}Not connected{% endif %}</code>
+    <code>{{ github.label }}</code>
     <div class="stack">
       <a class="button" href="/app/github">GitHub Setup</a>
       <a class="button" href="/app/slack">Slack Setup</a>

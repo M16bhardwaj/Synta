@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from github import Github
 from pathlib import Path
 from sqlalchemy import desc, select
 
@@ -53,11 +52,11 @@ def _require_workspace(request: Request):
 
 
 def _github_status() -> dict:
-    try:
-        user = Github(settings.github_token).get_user()
-        return {"connected": True, "login": user.login}
-    except Exception as exc:
-        return {"connected": False, "error": str(exc)}
+    return {
+        "connected": bool(settings.github_token),
+        "login": None,
+        "label": "Server token configured" if settings.github_token else "Not configured",
+    }
 
 
 def _slack_url() -> str:
@@ -131,6 +130,7 @@ def sign_in(email: str = Form(...), password: str = Form(...)):
             return RedirectResponse("/auth/sign-in?error=1", status_code=303)
         response = RedirectResponse("/app", status_code=303)
         auth.login(response, user)
+        response.delete_cookie("syntra_last_verification_link")
         return response
 
 
@@ -192,19 +192,25 @@ def dashboard(request: Request):
     with SessionLocal() as session:
         projects = session.scalars(
             select(Project)
-            .where((Project.workspace_id == workspace.id) | (Project.workspace_id.is_(None)))
+            .where(Project.workspace_id == workspace.id)
             .order_by(Project.name)
         ).all()
         bugs = session.scalars(
             select(Bug)
-            .where((Bug.workspace_id == workspace.id) | (Bug.workspace_id.is_(None)))
+            .where(Bug.workspace_id == workspace.id)
             .order_by(desc(Bug.created_at))
             .limit(8)
         ).all()
-        jobs = session.scalars(select(Job).order_by(desc(Job.created_at)).limit(6)).all()
+        jobs = session.scalars(
+            select(Job)
+            .join(Bug, Job.bug_id == Bug.bug_id)
+            .where(Bug.workspace_id == workspace.id)
+            .order_by(desc(Job.created_at))
+            .limit(6)
+        ).all()
         audits = session.scalars(
             select(AuditEvent)
-            .where((AuditEvent.workspace_id == workspace.id) | (AuditEvent.workspace_id.is_(None)))
+            .where(AuditEvent.workspace_id == workspace.id)
             .order_by(desc(AuditEvent.created_at))
             .limit(8)
         ).all()
@@ -235,7 +241,7 @@ def projects_page(request: Request):
     with SessionLocal() as session:
         projects = session.scalars(
             select(Project)
-            .where((Project.workspace_id == workspace.id) | (Project.workspace_id.is_(None)))
+            .where(Project.workspace_id == workspace.id)
             .order_by(Project.name)
         ).all()
     return templates.TemplateResponse(
@@ -271,7 +277,7 @@ def bugs_page(request: Request):
     with SessionLocal() as session:
         bugs = session.scalars(
             select(Bug)
-            .where((Bug.workspace_id == workspace.id) | (Bug.workspace_id.is_(None)))
+            .where(Bug.workspace_id == workspace.id)
             .order_by(desc(Bug.created_at))
         ).all()
     return templates.TemplateResponse(
@@ -287,7 +293,7 @@ def new_bug_page(request: Request):
     with SessionLocal() as session:
         projects = session.scalars(
             select(Project)
-            .where((Project.workspace_id == workspace.id) | (Project.workspace_id.is_(None)))
+            .where(Project.workspace_id == workspace.id)
             .order_by(Project.name)
         ).all()
     return templates.TemplateResponse(
@@ -483,7 +489,7 @@ def approvals_page(request: Request):
             select(Bug)
             .where(
                 Bug.status == BugStatus.PR_CREATED,
-                (Bug.workspace_id == workspace.id) | (Bug.workspace_id.is_(None)),
+                Bug.workspace_id == workspace.id,
             )
             .order_by(desc(Bug.created_at))
         ).all()
@@ -501,7 +507,7 @@ def approve_bug(request: Request, bug_id: str):
         return RedirectResponse("/auth/sign-in", status_code=303)
     with SessionLocal() as session:
         bugs = BugService(session)
-        bug = bugs.get(bug_id)
+        bug = bugs.get_for_workspace(bug_id, workspace.id)
         if not bug or not bug.pr_number:
             return RedirectResponse("/app/approvals?error=missing", status_code=303)
         GitHubService(settings.github_token).merge_pr(
@@ -519,7 +525,7 @@ def reject_bug_from_web(request: Request, bug_id: str):
     if not user or not workspace:
         return RedirectResponse("/auth/sign-in", status_code=303)
     with SessionLocal() as session:
-        bug = BugService(session).get(bug_id)
+        bug = BugService(session).get_for_workspace(bug_id, workspace.id)
         if bug:
             BugService(session).mark_rejected(bug)
     return RedirectResponse("/app/approvals", status_code=303)

@@ -100,11 +100,13 @@ class AuthService:
             token,
             httponly=True,
             samesite="lax",
+            secure=get_settings().app_base_url.startswith("https://"),
             max_age=60 * 60 * 24 * 14,
         )
 
     def logout(self, response: Response) -> None:
         response.delete_cookie(self.cookie_name)
+        response.delete_cookie("syntra_last_verification_link")
 
     def current_user(self, request: Request) -> User | None:
         token = request.cookies.get(self.cookie_name)

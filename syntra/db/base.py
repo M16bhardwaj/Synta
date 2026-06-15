@@ -29,6 +29,14 @@ def ensure_legacy_columns() -> None:
             project_columns = {column["name"] for column in inspector.get_columns("projects")}
             if "workspace_id" not in project_columns:
                 connection.execute(text("ALTER TABLE projects ADD COLUMN workspace_id INTEGER NULL"))
+            if engine.dialect.name == "postgresql":
+                connection.execute(text("ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_name_key"))
+                connection.execute(
+                    text(
+                        "CREATE UNIQUE INDEX IF NOT EXISTS "
+                        "ix_projects_workspace_id_name_unique ON projects (workspace_id, name)"
+                    )
+                )
         if "bugs" in inspector.get_table_names():
             bug_columns = {column["name"] for column in inspector.get_columns("bugs")}
             if "workspace_id" not in bug_columns:

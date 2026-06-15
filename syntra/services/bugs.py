@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from syntra.db.models import Bug, BugStatus, Project, ValidationStatus
 from syntra.schemas.bugs import BugIntake
@@ -24,6 +25,11 @@ class BugService:
 
     def get(self, bug_id: str) -> Bug | None:
         return self.session.get(Bug, bug_id)
+
+    def get_for_workspace(self, bug_id: str, workspace_id: int) -> Bug | None:
+        return self.session.scalar(
+            select(Bug).where(Bug.bug_id == bug_id, Bug.workspace_id == workspace_id)
+        )
 
     def mark_started(self, bug: Bug) -> None:
         bug.status = BugStatus.IN_PROGRESS

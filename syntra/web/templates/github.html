@@ -10,10 +10,9 @@
 <section class="panel wide">
   <h2>Status</h2>
   {% if github.connected %}
-  <p>Connected as <strong>{{ github.login }}</strong>.</p>
+  <p>GitHub server credentials are configured. Workspace-specific installations are listed below.</p>
   {% else %}
-  <p>GitHub is not connected or the token cannot be verified.</p>
-  <code>{{ github.error }}</code>
+  <p>GitHub credentials are not configured yet.</p>
   {% endif %}
   <div class="hero-actions">
     <a class="button primary" href="/integrations/github/install">Install GitHub App</a>

@@ -7,6 +7,7 @@ import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import PlainTextResponse, Response
+from sqlalchemy import select
 
 from syntra.agents.intake import IntakeAgent
 from syntra.agents.implementation import ImplementationAgent
@@ -20,6 +21,7 @@ from syntra.api.projects import router as projects_router
 from syntra.core.config import get_settings
 from syntra.core.logging import configure_logging
 from syntra.db.base import SessionLocal, create_db
+from syntra.db.models import SlackInstallation
 from syntra.services.bugs import BugService
 from syntra.services.git_service import GitService
 from syntra.services.github_service import GitHubService
@@ -138,7 +140,17 @@ def handle_syntra_command(form, enqueue_bug):
         bug_data = intake.parse(str(form.get("text", "")))
         channel = str(form["channel_id"])
         with SessionLocal() as session:
-            project = ProjectService(session).get_by_name(bug_data.project)
+            team_id = str(form.get("team_id", ""))
+            installation = session.scalar(
+                select(SlackInstallation).where(SlackInstallation.team_id == team_id)
+            )
+            if not installation:
+                return PlainTextResponse(
+                    "This Slack workspace is not connected to a Syntra workspace yet."
+                )
+            project = ProjectService(session).get_by_name(
+                bug_data.project, installation.workspace_id
+            )
             if not project:
                 return PlainTextResponse(
                     f"Unknown project `{bug_data.project}`. Register it before filing bugs."

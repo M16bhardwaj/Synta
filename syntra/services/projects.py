@@ -33,7 +33,5 @@ class ProjectService:
     def get_by_name(self, name: str, workspace_id: int | None = None) -> Project | None:
         query = select(Project).where(Project.name == name)
         if workspace_id is not None:
-            query = query.where(
-                (Project.workspace_id == workspace_id) | (Project.workspace_id.is_(None))
-            )
+            query = query.where(Project.workspace_id == workspace_id)
         return self.session.scalar(query)
